@@ -1,0 +1,123 @@
+name: Integration CI
+
+on:
+  push:
+    branches: [ main, copilot/** ]
+    paths:
+      - 'custom_components/**'
+      - '.github/workflows/integration-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'custom_components/**'
+      - '.github/workflows/integration-ci.yml'
+
+jobs:
+  lint:
+    name: Lint Integration Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pylint black isort
+
+      - name: Run flake8
+        run: |
+          flake8 custom_components/bluetooth_tracker --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 custom_components/bluetooth_tracker --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run pylint
+        continue-on-error: true
+        run: |
+          pylint custom_components/bluetooth_tracker --disable=C,R,W --fail-under=8.0
+
+      - name: Check code formatting with black
+        run: |
+          black --check custom_components/bluetooth_tracker
+
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only custom_components/bluetooth_tracker
+
+  validate:
+    name: Validate Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Home Assistant
+        run: |
+          pip install homeassistant
+
+      - name: Validate manifest
+        run: |
+          python -c "
+          import json
+          with open('custom_components/bluetooth_tracker/manifest.json') as f:
+              manifest = json.load(f)
+              required = ['domain', 'name', 'documentation', 'dependencies', 'codeowners', 'version']
+              for key in required:
+                  if key not in manifest:
+                      print(f'Missing required key: {key}')
+                      exit(1)
+              print('Manifest validation passed')
+          "
+
+      - name: Check strings.json
+        run: |
+          python -c "
+          import json
+          with open('custom_components/bluetooth_tracker/strings.json') as f:
+              strings = json.load(f)
+              if 'config' not in strings:
+                  print('Missing config section in strings.json')
+                  exit(1)
+              print('Strings validation passed')
+          "
+
+  test:
+    name: Test Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio pytest-homeassistant-custom-component
+          pip install homeassistant
+
+      - name: Run tests
+        run: |
+          # Create basic test structure if tests exist
+          if [ -d "tests" ]; then
+            pytest tests/ -v
+          else
+            echo "No tests directory found - skipping pytest"
+          fi
+
+      - name: Syntax check
+        run: |
+          python -m py_compile custom_components/bluetooth_tracker/__init__.py
+          python -m py_compile custom_components/bluetooth_tracker/config_flow.py
+          python -m py_compile custom_components/bluetooth_tracker/device_tracker.py

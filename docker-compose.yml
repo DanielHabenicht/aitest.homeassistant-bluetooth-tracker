@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant-test
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    volumes:
+      - ./test-config:/config
+      - ./custom_components:/config/custom_components:ro
+      - /run/dbus:/run/dbus:ro
+    environment:
+      - TZ=UTC
+
+  bluetooth-monitor:
+    build:
+      context: ./homeassistant_addon
+      dockerfile: Dockerfile
+      args:
+        BUILD_FROM: ghcr.io/home-assistant/amd64-base-python:3.11
+    container_name: bluetooth-monitor-test
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    volumes:
+      - /run/dbus:/run/dbus:ro
+    environment:
+      - SCAN_DURATION=10
+      - SCAN_PAUSE=1
+      - MAX_DEVICE_AGE=300
+    command: python3 /app/monitor.py --port 8099
+
+  # Mock Bluetooth device simulator for testing (optional)
+  bluetooth-simulator:
+    image: python:3.11-slim
+    container_name: bluetooth-simulator
+    volumes:
+      - ./test-utils:/test-utils:ro
+    command: |
+      sh -c "
+      pip install bleak &&
+      if [ -f /test-utils/simulator.py ]; then
+        python /test-utils/simulator.py
+      else
+        echo 'Bluetooth simulator not found - skipping'
+        tail -f /dev/null
+      fi
+      "
+    network_mode: host

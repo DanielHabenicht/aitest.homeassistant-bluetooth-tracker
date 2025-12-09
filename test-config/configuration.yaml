@@ -1,0 +1,33 @@
+# Home Assistant Test Configuration
+homeassistant:
+  name: Test Home
+  latitude: 52.3667
+  longitude: 4.8945
+  elevation: 0
+  unit_system: metric
+  time_zone: UTC
+
+# Enable the API
+api:
+
+# Enable frontend
+frontend:
+
+# Enable config
+config:
+
+# Enable HTTP
+http:
+  server_port: 8123
+
+# Enable default logging
+logger:
+  default: info
+  logs:
+    custom_components.bluetooth_tracker: debug
+
+# Enable Bluetooth if available
+bluetooth:
+
+# Auto-load bluetooth_tracker integration (if installed)
+# The integration will be available in the integrations UI

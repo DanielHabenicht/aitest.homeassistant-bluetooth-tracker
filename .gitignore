@@ -36,6 +36,18 @@ wheels/
 .coverage
 htmlcov/
 .tox/
+test-config/.storage/
+test-config/*.db
+test-config/*.db-*
+test-config/*.log
+test-config/*.pid
+test-config/*.sqlite*
+test-config/home-assistant_v2.*
+test-config/deps/
+test-config/tts/
+
+# Docker
+.dockerignore
 
 # Temporary files
 tmp/

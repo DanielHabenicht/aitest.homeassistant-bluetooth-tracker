@@ -1,0 +1,13 @@
+# Ignore runtime files
+*.db
+*.db-*
+*.log
+.storage/
+.cloud/
+deps/
+tts/
+*.pid
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+home-assistant_v2.*

@@ -1,0 +1,66 @@
+version: '3.8'
+
+# Simplified test environment without actual Bluetooth hardware
+services:
+  homeassistant-test:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: ha-integration-test
+    restart: "no"
+    network_mode: bridge
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./test-config:/config
+      - ./custom_components:/config/custom_components:ro
+    environment:
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  addon-test:
+    build:
+      context: ./homeassistant_addon
+      dockerfile: Dockerfile
+      args:
+        BUILD_FROM: ghcr.io/home-assistant/amd64-base-python:3.11
+    container_name: addon-test
+    restart: "no"
+    ports:
+      - "8099:8099"
+    environment:
+      - SCAN_DURATION=5
+      - SCAN_PAUSE=2
+      - MAX_DEVICE_AGE=120
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8099"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  test-runner:
+    image: python:3.11-slim
+    container_name: test-runner
+    depends_on:
+      homeassistant-test:
+        condition: service_healthy
+      addon-test:
+        condition: service_healthy
+    volumes:
+      - ./test-utils:/tests:ro
+    command: |
+      sh -c "
+      pip install requests &&
+      if [ -f /tests/run_tests.py ]; then
+        python /tests/run_tests.py
+      else
+        echo 'Test runner not found - performing basic checks'
+        curl -f http://homeassistant-test:8123 || echo 'Home Assistant not responding'
+        curl -f http://addon-test:8099 || echo 'Add-on not responding'
+      fi
+      "
+    network_mode: bridge
