@@ -1,0 +1,23 @@
+name: Bluetooth Advertisement Monitor
+version: "1.0.0"
+slug: bluetooth_advertisement_monitor
+description: Monitor and view all Bluetooth advertisements with HEX to ASCII conversion
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+init: false
+host_network: true
+host_dbus: true
+devices:
+  - /dev/bus/usb
+options:
+  port: 8099
+schema:
+  port: port
+ports:
+  8099/tcp: 8099
+startup: application
+boot: auto

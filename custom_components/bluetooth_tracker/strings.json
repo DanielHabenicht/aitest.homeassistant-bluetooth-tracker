@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Bluetooth Tracker",
+        "description": "This integration will automatically track Bluetooth devices that are advertising. Entities will be created automatically when advertisements are detected.",
+        "data": {}
+      }
+    },
+    "abort": {
+      "already_configured": "Bluetooth Tracker is already configured"
+    }
+  }
+}
