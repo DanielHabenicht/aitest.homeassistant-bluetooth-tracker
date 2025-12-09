@@ -21,6 +21,20 @@ _LOGGER = logging.getLogger(__name__)
 DOMAIN = "bluetooth_tracker"
 
 
+def generate_unique_id(address: str) -> str:
+    """Generate a unique ID for a Bluetooth device.
+    
+    Args:
+        address: The Bluetooth MAC address
+        
+    Returns:
+        A normalized unique ID string
+    """
+    # Normalize address: remove colons, convert to lowercase
+    normalized = address.replace(":", "_").lower()
+    return f"{DOMAIN}_{normalized}"
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -78,7 +92,7 @@ class BluetoothTrackerEntity(ScannerEntity):
         """Initialize the Bluetooth tracker entity."""
         self._service_info = service_info
         self._address = service_info.address
-        self._attr_unique_id = f"{DOMAIN}_{self._address.replace(':', '_').lower()}"
+        self._attr_unique_id = generate_unique_id(self._address)
         self._attr_is_connected = True
         self._rssi = service_info.rssi
 

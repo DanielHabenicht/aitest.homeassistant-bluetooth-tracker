@@ -3,7 +3,9 @@
 import argparse
 import asyncio
 import logging
-from datetime import datetime
+import os
+import threading
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 from bleak import BleakScanner
@@ -15,6 +17,12 @@ logger = logging.getLogger(__name__)
 
 # Store recent advertisements
 advertisements: Dict[str, dict] = {}
+advertisements_lock = threading.Lock()
+
+# Configuration from environment variables
+SCAN_DURATION = int(os.environ.get("SCAN_DURATION", "10"))
+SCAN_PAUSE = int(os.environ.get("SCAN_PAUSE", "1"))
+MAX_DEVICE_AGE = int(os.environ.get("MAX_DEVICE_AGE", "300"))  # 5 minutes default
 
 
 def hex_to_ascii(hex_data: str) -> str:
@@ -33,9 +41,22 @@ def hex_to_ascii(hex_data: str) -> str:
         return "N/A"
 
 
+def cleanup_stale_devices():
+    """Remove devices that haven't been seen recently."""
+    cutoff_time = datetime.now() - timedelta(seconds=MAX_DEVICE_AGE)
+    with advertisements_lock:
+        stale_devices = [
+            addr for addr, data in advertisements.items()
+            if datetime.fromisoformat(data["last_seen"]) < cutoff_time
+        ]
+        for addr in stale_devices:
+            logger.info(f"Removing stale device: {addr}")
+            del advertisements[addr]
+
+
 async def scan_bluetooth():
     """Continuously scan for Bluetooth advertisements."""
-    logger.info("Starting Bluetooth scanner...")
+    logger.info(f"Starting Bluetooth scanner (scan: {SCAN_DURATION}s, pause: {SCAN_PAUSE}s)...")
     
     def detection_callback(device, advertisement_data):
         """Handle detected Bluetooth advertisements."""
@@ -63,26 +84,28 @@ async def scan_bluetooth():
                     "bytes": list(data),
                 }
         
-        # Store advertisement information
-        advertisements[address] = {
-            "name": device.name or "Unknown",
-            "address": address,
-            "rssi": advertisement_data.rssi,
-            "local_name": advertisement_data.local_name,
-            "manufacturer_data": manufacturer_data,
-            "service_data": service_data,
-            "service_uuids": advertisement_data.service_uuids or [],
-            "last_seen": datetime.now().isoformat(),
-        }
+        # Store advertisement information with thread safety
+        with advertisements_lock:
+            advertisements[address] = {
+                "name": device.name or "Unknown",
+                "address": address,
+                "rssi": advertisement_data.rssi,
+                "local_name": advertisement_data.local_name,
+                "manufacturer_data": manufacturer_data,
+                "service_data": service_data,
+                "service_uuids": advertisement_data.service_uuids or [],
+                "last_seen": datetime.now().isoformat(),
+            }
     
     scanner = BleakScanner(detection_callback=detection_callback)
     
     while True:
         try:
             await scanner.start()
-            await asyncio.sleep(10)  # Scan for 10 seconds
+            await asyncio.sleep(SCAN_DURATION)
             await scanner.stop()
-            await asyncio.sleep(1)  # Brief pause before next scan
+            cleanup_stale_devices()
+            await asyncio.sleep(SCAN_PAUSE)
         except Exception as e:
             logger.error(f"Error during Bluetooth scanning: {e}")
             await asyncio.sleep(5)
@@ -280,7 +303,8 @@ def create_app(port: int):
     @app.route("/api/advertisements")
     def get_advertisements():
         """Return current advertisements as JSON."""
-        return jsonify(advertisements)
+        with advertisements_lock:
+            return jsonify(advertisements.copy())
     
     return app
 

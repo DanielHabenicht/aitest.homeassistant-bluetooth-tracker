@@ -15,9 +15,19 @@ devices:
   - /dev/bus/usb
 options:
   port: 8099
+  scan_duration: 10
+  scan_pause: 1
+  max_device_age: 300
 schema:
   port: port
+  scan_duration: int(1,60)?
+  scan_pause: int(1,10)?
+  max_device_age: int(60,3600)?
 ports:
   8099/tcp: 8099
 startup: application
 boot: auto
+environment:
+  SCAN_DURATION: scan_duration
+  SCAN_PAUSE: scan_pause
+  MAX_DEVICE_AGE: max_device_age

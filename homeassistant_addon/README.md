@@ -22,9 +22,12 @@ This Home Assistant add-on monitors all Bluetooth advertisements in range and pr
 
 ## Configuration
 
-The add-on has one configuration option:
+The add-on has the following configuration options:
 
 - **port**: The port for the web interface (default: 8099)
+- **scan_duration**: How long to scan for advertisements in seconds (default: 10, range: 1-60)
+- **scan_pause**: Pause duration between scans in seconds (default: 1, range: 1-10)
+- **max_device_age**: Maximum age in seconds before removing stale devices (default: 300, range: 60-3600)
 
 ## Usage
 
