@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BLE Wizard",
+        "description": "Set up BLE Wizard. This adds a sidebar panel where you can browse every Bluetooth device your adapters and proxies see, inspect them, and add their values as sensors."
+      }
+    },
+    "abort": {
+      "already_configured": "Already configured. BLE Wizard devices are added from the BLE Wizard panel in the sidebar."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "How often to connect and read this device's sensors, in seconds.",
+        "data": {
+          "poll_interval": "Poll interval (seconds)"
+        }
+      }
+    },
+    "abort": {
+      "no_options": "The BLE Wizard hub has no settings. Configure poll intervals on the individual devices."
+    }
+  }
+}

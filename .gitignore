@@ -1,0 +1,7 @@
+.DS_Store
+
+# Secrets and runtime state — keep out of any future git history.
+ha-test/token.txt
+ha-test/refresh_token.txt
+ha-test/config/*
+!ha-test/config/configuration.yaml

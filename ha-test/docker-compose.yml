@@ -1,0 +1,27 @@
+# Throwaway Home Assistant for developing BLE Wizard.
+#
+#   cd ha-test && docker compose up -d
+#
+# UI: http://localhost:8123  (admin / turbohmi-test-1234)
+# The config/ dir is fully onboarded: admin user, BLE Wizard hub entry, and
+# the ESPHome Bluetooth proxy (xiao-smart-ir-mate-1 @ 192.168.100.146) are
+# already set up. Quirk: after a restart the proxy's scanner sometimes stays
+# idle — reload the ESPHome integration entry in the UI to kick it.
+#
+# refresh_token.txt (next to this file) holds a long-lived API refresh token
+# for the admin user; exchange it at POST /auth/token with
+# grant_type=refresh_token to script against the instance.
+services:
+  homeassistant:
+    container_name: ble-wizard-ha-test
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./config:/config
+      # The integration under test, straight from the repo.
+      - ../custom_components/ble_wizard:/config/custom_components/ble_wizard:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Europe/Berlin
